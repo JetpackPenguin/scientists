@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Musician Manager</title>
+    <style>
+        body { font-family: sans-serif; max-width: 600px; margin: 20px auto; padding: 20px; line-height: 1.6; }
+        .card { border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 8px; }
+        .admin-section { background: #f4f4f4; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 2px solid #333; }
+        input, textarea { width: 100%; margin-bottom: 10px; padding: 8px; box-sizing: border-box; }
+        button { background: #007bff; color: white; border: none; padding: 10px 15px; cursor: pointer; border-radius: 4px; }
+        button:hover { background: #0056b3; }
+        .delete-btn { background: #dc3545; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <h2>Musician Manager</h2>
+
+    <div class="admin-section">
+        <h3>Admin Access</h3>
+        <label>Enter Secret API Key:</label>
+        <input type="password" id="adminKey" placeholder="Paste your X-Admin-Key here...">
+        <p><small>This key is required to Add or Delete musicians.</small></p>
+    </div>
+
+    <div class="card">
+        <h3>Add New Musician</h3>
+        <input type="text" id="name" placeholder="Name (e.g. David Bowie)">
+        <input type="text" id="genre" placeholder="Genre">
+        <input type="text" id="country" placeholder="Country">
+        <textarea id="bio" placeholder="Short Bio"></textarea>
+        <button onclick="addMusician()">Post Musician</button>
+    </div>
+
+    <hr>
+    <h3>All Musicians</h3>
+    <div id="musicianList">Loading...</div>
+
+    <script>
+        // REPLACE THIS WITH YOUR RENDER URL
+        const API_BASE_URL = "https://your-api-name.render.com";
+
+        // 1. Fetch and Display Musicians (PUBLIC)
+        async function loadMusicians() {
+            const res = await fetch(`${API_BASE_URL}/musicians`);
+            const data = await res.json();
+            const list = document.getElementById('musicianList');
+            list.innerHTML = '';
+
+            data.musicians.forEach(m => {
+                list.innerHTML += `
+                    <div class="card">
+                        <strong>${m.name}</strong> (${m.genre}) - ${m.country}<br>
+                        <small>ID: ${m.id}</small>
+                        <p>${m.bio}</p>
+                        <button class="delete-btn" onclick="deleteMusician(${m.id})">Delete</button>
+                    </div>
+                `;
+            });
+        }
+
+        // 2. Add Musician (PROTECTED)
+        async function addMusician() {
+            const key = document.getElementById('adminKey').value;
+            const payload = {
+                name: document.getElementById('name').value,
+                genre: document.getElementById('genre').value,
+                country: document.getElementById('country').value,
+                bio: document.getElementById('bio').value
+            };
+
+            const res = await fetch(`${API_BASE_URL}/musicians`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Admin-Key': key  // The key from your textbox!
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.status === 201) {
+                alert("Success!");
+                loadMusicians();
+            } else if (res.status === 403) {
+                alert("Error: Invalid Secret Key");
+            } else {
+                alert("Error: check console/logs");
+            }
+        }
+
+        // 3. Delete Musician (PROTECTED)
+        async function deleteMusician(id) {
+            const key = document.getElementById('adminKey').value;
+            if (!confirm("Are you sure?")) return;
+
+            const res = await fetch(`${API_BASE_URL}/musicians/${id}`, {
+                method: 'DELETE',
+                headers: { 'X-Admin-Key': key }
+            });
+
+            if (res.ok) {
+                loadMusicians();
+            } else {
+                alert("Delete failed. Is your key correct?");
+            }
+        }
+
+        // Initial Load
+        loadMusicians();
+    </script>
+</body>
+</html>
