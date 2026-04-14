@@ -83,7 +83,7 @@ def _row_to_response(row: dict) -> MusicianResponse:
 # ---------------------------------------------------------------------------
 # PUBLIC ROUTES (No Key Required)
 # ---------------------------------------------------------------------------
-@app.get("/", response_class=FileResponse)
+@app.get("/fortytwodugg", response_class=FileResponse)
 def read_index():
     # This looks for the index.html file in your GitHub folder
     return "index.html"
