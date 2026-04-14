@@ -44,7 +44,7 @@ async def verify_admin_key(api_key: str = Security(api_key_header)):
 # ---------------------------------------------------------------------------
 # FastAPI App
 # ---------------------------------------------------------------------------
-app = FastAPI(title="Musicians API with Security", version="1.1.0")
+app = FastAPI(title="Musicians API", version="1.1.0")
 
 app.add_middleware(
     CORSMiddleware,
