@@ -120,20 +120,29 @@ def replace_musician(musician_id: int, payload: MusicianCreate):
 
 @app.patch("/musicians/{musician_id}", response_model=MusicianResponse, dependencies=[Depends(verify_admin_key)])
 def partially_update_musician(musician_id: int, payload: MusicianUpdate):
-    # 1. Convert to dict, stripping out anything the user didn't type
-    # 2. exclude_none=True ensures we don't send "null" to Supabase
+    # 1. Get only the fields the user actually sent in the JSON
     update_data = payload.model_dump(exclude_unset=True, exclude_none=True)
     
-    # 3. EXTRA SAFETY: Remove empty strings so we don't accidentally wipe data
-    update_data = {k: v for k, v in update_data.items() if v != ""}
+    # 2. RUTHLESS FILTER: Remove fields that are just empty strings or only whitespace
+    # This prevents an empty "name" box on a website from overwriting your database
+    update_data = {
+        k: v.strip() for k, v in update_data.items() 
+        if isinstance(v, str) and v.strip() != ""
+    }
+
+    # 3. DEBUG: Check your Render Logs to see this!
+    print(f"DEBUG: Data actually being sent to Supabase: {update_data}")
 
     if not update_data:
-        raise HTTPException(status_code=400, detail="No valid fields provided for update")
+        raise HTTPException(
+            status_code=400, 
+            detail="No valid changes provided. Did you leave all boxes blank?"
+        )
 
     response = supabase.table("musicians").update(update_data).eq("id", musician_id).execute()
     
     if not response.data:
-        raise HTTPException(status_code=404, detail="Musician not found or update failed")
+        raise HTTPException(status_code=404, detail="Musician not found")
         
     return _row_to_response(response.data[0])
 
